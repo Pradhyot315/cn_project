@@ -1,0 +1,67 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{url}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{Quantization as an Implicit Regularizer: Evaluating Cross-Domain Shortcut Learning in Edge-Deployable Network Intrusion Detection Systems}
+
+\author{
+\IEEEauthorblockN{Pradhyot}
+\IEEEauthorblockA{\textit{School of Computer Science and Engineering} \\
+\textit{Vellore Institute of Technology}\\
+Vellore, Tamil Nadu, India \\
+Reg. No: 24BCE0660}
+\and
+\IEEEauthorblockN{Chitraksh}
+\IEEEauthorblockA{\textit{School of Computer Science and Engineering} \\
+\textit{Vellore Institute of Technology}\\
+Vellore, Tamil Nadu, India \\
+Reg. No: 24BCE0688}
+\and
+\IEEEauthorblockN{Ishani Majumder}
+\IEEEauthorblockA{\textit{School of Information Technology and Engineering} \\
+\textit{Vellore Institute of Technology}\\
+Vellore, Tamil Nadu, India \\
+Reg. No: 24BCI0139}
+}
+
+\maketitle
+
+\begin{abstract}
+Deploying deep learning-based Network Intrusion Detection Systems (NIDS) onto resource-constrained edge microcontrollers requires aggressive post-training quantization. However, deep classifiers frequently suffer from shortcut learning, fitting fragile dataset-specific artifacts that cause catastrophic accuracy collapse under cross-domain distribution shifts. This paper investigates whether 8-bit integer post-training quantization (PTQ) exacerbates or mitigates cross-domain collapse. Using ZeroEdge-NIDS—an end-to-end empirical evaluation and software-simulated edge deployment platform—we train a 3-layer multi-layer perceptron on the CIC-IDS-2017 dataset using a harmonized 16-feature set with explicit shortcut artifact removal, and evaluate both 32-bit floating-point (FP32) and quantized 8-bit integer (INT8) variants zero-shot across all 257,673 flows of the UNSW-NB15 dataset. While the FP32 baseline experiences a devastating accuracy collapse of $-61.92\%$ (dropping from $97.34\%$ in-domain to $35.42\%$ cross-domain), INT8 post-training quantization provides a statistically significant mitigating effect, achieving $36.51\%$ accuracy ($+1.09\%$ absolute boost, dampening collapse by $2.32\%$) and reducing target false alarms by $44.9\%$. A paired McNemar correctness test confirms statistical significance ($\chi^2 = 1,871.69, p < 10^{-15}$), supported by a $95\%$ bootstrap confidence interval of $[+0.0138, +0.0152]$. Permutation feature importance probes confirm that weight precision truncation dampens non-causal statistical shortcuts. We release our open-source platform, raw evaluation CSV datasets, and an interactive evaluation lab enforcing strict label dependency gating.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Network Intrusion Detection Systems (NIDS), Edge Computing, TinyML, Post-Training Quantization, Shortcut Learning, Cross-Domain Generalization, ESP32 Microcontrollers.
+\end{IEEEkeywords}
+
+\input{sections/sec1_intro.tex}
+\input{sections/sec2_related.tex}
+\input{sections/sec3_architecture.tex}
+\input{sections/sec4_implementation.tex}
+\input{sections/sec5_experimental_setup.tex}
+\input{sections/sec6_results.tex}
+\input{sections/sec7_discussion.tex}
+\input{sections/sec8_future_work.tex}
+\input{sections/sec9_conclusion.tex}
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\input{sections/sec10_appendix.tex}
+
+\end{document}

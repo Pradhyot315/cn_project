@@ -1,0 +1,60 @@
+\appendix
+\section*{Appendix}
+\label{sec:appendix}
+
+\subsection{Appendix A: Canonical Feature Definitions}
+Table~\ref{tab:feature_defs} documents the complete set of 16 canonical features, their operational descriptions, and the exact mathematical derivation applied to the source (CIC-IDS-2017) and target (UNSW-NB15) schemas.
+
+\begin{table*}[h]
+\centering
+\caption{Harmonized 16-Feature Set Definitions and Cross-Schema Derivations}
+\label{tab:feature_defs}
+\renewcommand{\arraystretch}{1.15}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{cllll}
+\hline
+\textbf{Index} & \textbf{Canonical Feature Name} & \textbf{Description} & \textbf{CIC-IDS-2017 Schema} & \textbf{UNSW-NB15 Derivation} \\
+\hline
+1 & \texttt{dst\_port} & Destination Transport Port & \texttt{Destination Port} & \texttt{dsport} \\
+2 & \texttt{flow\_duration\_us} & Total Flow Duration in microseconds & \texttt{Flow Duration} & \texttt{dur * 1e6} \\
+3 & \texttt{total\_fwd\_packets} & Total Packets in Forward Direction & \texttt{Total Fwd Packets} & \texttt{spkts} \\
+4 & \texttt{total\_bwd\_packets} & Total Packets in Backward Direction & \texttt{Total Backward Packets} & \texttt{dpkts} \\
+5 & \texttt{total\_fwd\_bytes} & Total Payload Bytes in Forward Direction & \texttt{Total Length of Fwd Packets} & \texttt{sbytes} \\
+6 & \texttt{total\_bwd\_bytes} & Total Payload Bytes in Backward Direction & \texttt{Total Length of Bwd Packets} & \texttt{dbytes} \\
+7 & \texttt{fwd\_pkt\_len\_max} & Maximum Forward Packet Size (bytes) & \texttt{Fwd Packet Length Max} & \texttt{sbytes / max(1, spkts)} \\
+8 & \texttt{fwd\_pkt\_len\_min} & Minimum Forward Packet Size (bytes) & \texttt{Fwd Packet Length Min} & \texttt{sbytes / max(1, spkts)} \\
+9 & \texttt{fwd\_pkt\_len\_mean} & Mean Forward Packet Size (bytes) & \texttt{Fwd Packet Length Mean} & \texttt{sbytes / max(1, spkts)} \\
+10 & \texttt{fwd\_pkt\_len\_std} & Standard Deviation Forward Packet Size & \texttt{Fwd Packet Length Std} & \texttt{0.0} (Aggregated representation) \\
+11 & \texttt{bwd\_pkt\_len\_max} & Maximum Backward Packet Size (bytes) & \texttt{Bwd Packet Length Max} & \texttt{dbytes / max(1, dpkts)} \\
+12 & \texttt{bwd\_pkt\_len\_min} & Minimum Backward Packet Size (bytes) & \texttt{Bwd Packet Length Min} & \texttt{dbytes / max(1, dpkts)} \\
+13 & \texttt{bwd\_pkt\_len\_mean} & Mean Backward Packet Size (bytes) & \texttt{Bwd Packet Length Mean} & \texttt{dbytes / max(1, dpkts)} \\
+14 & \texttt{bwd\_pkt\_len\_std} & Standard Deviation Backward Packet Size & \texttt{Bwd Packet Length Std} & \texttt{0.0} (Aggregated representation) \\
+15 & \texttt{flow\_byts\_s} & Flow Throughput (bytes / second) & \texttt{Flow Bytes/s} & \texttt{sload / 8.0} \\
+16 & \texttt{flow\_pkts\_s} & Flow Packet Rate (packets / second) & \texttt{Flow Packets/s} & \texttt{spkts / max(1e-6, dur)} \\
+\hline
+\end{tabular}
+}
+\end{table*}
+
+\subsection{Appendix B: Hardware Model Parameter Specification}
+The analytical ESP32 microcontroller model is parameterized using values extracted from the official Espressif ESP32 Technical Reference Manual~\cite{espressif2023esp32} and empirical TinyML benchmarking literature~\cite{banbury2021benchmarking}:
+\begin{itemize}
+    \item CPU Core: Dual Xtensa 32-bit LX6 microprocessors running at $240\ \text{MHz}$ ($T_{\text{clk}} = 4.167\ \text{ns}$).
+    \item Internal Memory: $520\ \text{KB}$ internal SRAM ($320\ \text{KB}$ usable data DRAM).
+    \item Flash Storage: $4\ \text{MB}$ Quad SPI Flash.
+    \item Operating Voltage: $V_{\text{dd}} = 3.3\ \text{V}$ nominal.
+    \item Active Power Draw: $62.0\ \text{mA}$ typical during continuous INT8 integer arithmetic, and $78.5\ \text{mA}$ during FP32 software emulation.
+    \item Shunt Sensor: Texas Instruments INA219 current/power monitor connected via I2C at $400\ \text{kHz}$ fast mode.
+    \item Serial Telemetry Link: Hardware UART at $921,600\ \text{baud}$ (8 data bits, 1 stop bit, no parity; transmission overhead: $10.85\ \mu\text{s}$ per byte).
+\end{itemize}
+
+\subsection{Appendix C: Platform API Specification}
+The ZeroEdge-NIDS FastAPI backend exposes the following primary endpoints:
+\begin{itemize}
+    \item \texttt{POST /api/experiment/inspect-dataset}: Ingests CSV telemetry, performs schema validation, checks for NaN/Inf anomalies, and returns auto-suggested 16-feature mappings.
+    \item \texttt{POST /api/experiment/run}: Executes the 10-step experiment pipeline with frozen scaler preprocessing, paired statistical evaluation, and dependency gating.
+    \item \texttt{POST /api/experiment/manual-flow}: Evaluates a single 16-element flow vector through raw, scaled, and quantized tensor representations.
+    \item \texttt{GET /api/experiment/preset-flows}: Returns genuine benign and attack flow vectors extracted from verified test partitions.
+    \item \texttt{GET /api/experiment/export/\{run\_id\}/json}: Downloads structured JSON audit package.
+    \item \texttt{GET /api/experiment/export/\{run\_id\}/csv}: Downloads flow-by-flow prediction records in CSV format.
+\end{itemize}

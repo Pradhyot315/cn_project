@@ -1,0 +1,46 @@
+\section{Implementation Details}
+\label{sec:implementation}
+
+The ZeroEdge-NIDS implementation comprises an automated offline Python pipeline, a high-performance FastAPI telemetry backend, an embedded C header generator, and an interactive React-based oscilloscope interface.
+
+\subsection{Python Machine Learning Pipeline}
+The offline processing pipeline is implemented in Python 3.11 using NumPy, Pandas, Scikit-learn, and SciPy:
+\begin{itemize}
+    \item \texttt{pipeline/feature\_map.py}: Implements the canonical 16-feature extractor. It enforces strict feature name harmonization between the CIC-IDS-2017 schema and UNSW-NB15 schema.
+    \item \texttt{pipeline/train.py}: Implements class-weighted mini-batch Adam optimization directly in pure NumPy, eliminating deep learning framework overhead and ensuring exact floating-point determinism. Training incorporates an inverse-frequency class-weight penalty $\mathbf{w}_c = N / (2 \cdot N_c)$ to counterbalance attack class imbalance.
+    \item \texttt{pipeline/quantize.py}: Implements the uniform affine PTQ algorithm detailed in Section~\ref{sec:architecture}. It calibrates quantization parameters across $50,000$ training flow samples and exports quantized integer weight arrays.
+    \item \texttt{pipeline/hw\_model.py}: Implements the operational MAC counter and host performance profiler using Python's \texttt{time.perf\_counter\_ns()}. During profiling, garbage collection is explicitly disabled (\texttt{gc.disable()}) across $200$ warm-up iterations and $3,000$ timed evaluation flows over $5$ statistical repetitions.
+\end{itemize}
+
+\subsection{Embedded C Header Generation (\texttt{model\_data.h})}
+To establish practical deployment readiness, the pipeline automatically synthesizes an ANSI C header file (\texttt{model\_data.h}) targeting ESP-IDF and PlatformIO embedded environments. The header encodes:
+\begin{enumerate}
+    \item Fixed-width integer arrays: \texttt{const int8\_t conv1\_weights[32][16]}, \texttt{const int32\_t conv1\_biases[32]}, \texttt{const int8\_t conv2\_weights[16][32]}, \texttt{const int32\_t conv2\_biases[16]}, \texttt{const int8\_t fc\_weights[1][16]}, and \texttt{const int32\_t fc\_bias[1]}.
+    \item Quantization constants: \texttt{const float input\_scale}, \texttt{const int32\_t input\_zero\_point}, and layer-wise multiplier mantissas \texttt{const int32\_t output\_mult} and shift exponents \texttt{const int8\_t output\_shift}.
+    \item Input normalization vectors: \texttt{const float scaler\_min[16]} and \texttt{const float scaler\_range[16]} derived exclusively from the source partition.
+\end{enumerate}
+
+\subsection{FastAPI Telemetry Server}
+The backend service (\texttt{backend/main.py}) exposes a non-blocking asynchronous REST API using FastAPI and Uvicorn. The server hosts:
+\begin{itemize}
+    \item \texttt{GET /api/metrics}: Serves complete in-domain and cross-domain classification metrics, confusion matrices, and collapse ratios.
+    \item \texttt{GET /api/benchmark}: Serves host timing distributions and ESP32 analytical projections.
+    \item \texttt{POST /api/benchmark/run}: Triggers on-demand live re-benchmarking across user-configurable batch sizes ($50\text{--}2,000$ flows).
+    \item \texttt{WS /api/stream/ws}: Provides a full-duplex WebSocket stream broadcasting network flows with ground truth labels, FP32 probabilities, and INT8 quantized predictions at configurable baud rates.
+\end{itemize}
+
+\subsection{Interactive Experiment Lab & Dependency Gating}
+A key technical contribution of the platform is the \textbf{Interactive Experiment Lab} (\texttt{backend/experiment\_routes.py} and \texttt{backend/experiment\_service.py}). The lab accepts arbitrary user-uploaded CSV datasets up to $50\ \text{MB}$ ($50,000$ flows) or manual 16-element flow vectors.
+
+To uphold absolute scientific rigor, the engine enforces \emph{strict mathematical dependency gating}:
+\begin{itemize}
+    \item \textbf{Feature Mapping Enforcement:} An automated schema mapper validates that all 16 canonical features are mapped to valid numeric columns. If any feature is missing, execution is halted with an explicit validation error.
+    \item \textbf{Unlabeled Dataset Gating:} If an uploaded dataset lacks verified ground-truth attack labels, the service computes model inference, cross-model decision agreement, probability differences, the Wilcoxon signed-rank distribution test, host CPU execution timing, and ESP32 hardware projections. However, the system \textbf{strictly suppresses} accuracy, balanced accuracy, precision, recall, F1-score, false positive rate, confusion matrices, and the McNemar correctness test. These fields are returned with status \texttt{not\_applicable} and reason \texttt{"No ground truth labels provided"}.
+    \item \textbf{Paired Statistical Auditing:} When labels exist, paired McNemar chi-squared statistics with Edwards continuity corrections are computed on discordant flow classifications alongside Wilcoxon signed-rank tests on continuous output probabilities.
+    \item \textbf{Audit Exporting:} Results are downloadable as immutable structured JSON audit packages and flow-by-flow prediction CSV files.
+\end{itemize}
+
+\subsection{Oscilloscope Frontend & Web Worker Verifier}
+The user interface is constructed using React 18, Vite, TypeScript, and Tailwind CSS. The interface adopts a dark oscilloscope aesthetic (\texttt{\#06090e}) styled after hardware logic analyzers.
+
+To provide independent validation of backend quantization math, the frontend incorporates a dedicated client-side TypeScript Web Worker (\texttt{web/src/workers/int8Worker.ts}). The Web Worker independently mirrors the integer-only PTQ inference pipeline in the browser's JavaScript V8 engine, executing bit-exact comparisons against backend telemetry to verify that the simulated quantization arithmetic is deterministic across heterogeneous runtime environments.

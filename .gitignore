@@ -67,3 +67,8 @@ coverage/
 *.hex
 *.elf
 .pio/
+
+# Datasets & Materials
+Material/
+material/
+data/

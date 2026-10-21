@@ -1,0 +1,10 @@
+\section{Future Work}
+\label{sec:future}
+
+Several avenues for immediate extension emerge from this work:
+\begin{enumerate}
+    \item \textbf{Physical Hardware-in-the-Loop Validation:} The current platform provides an exportable C header (\texttt{model\_data.h}) and analytical models. The logical next phase is flashing this header onto physical ESP32 development boards (ESP32-WROOM-32D) coupled with physical Texas Instruments INA219 shunt sensors over I2C to capture physical oscillographic power waveforms under sustained network traffic injection.
+    \item \textbf{Quantization-Aware Training (QAT):} While this study focuses on Post-Training Quantization (PTQ) due to its zero-overhead applicability to pre-trained enterprise models, future work will evaluate whether Quantization-Aware Training (QAT)—which introduces simulated quantization noise during gradient backpropagation—encourages the model to learn representations that are fundamentally more resilient to shortcut learning.
+    \item \textbf{Federated and Continual Edge Adaptation:} To overcome the $2.54\%$ zero-shot recall ceiling without transmitting raw network flows to a central server (preserving privacy and bandwidth), we plan to investigate lightweight on-device continual learning routines that update only the final classification layer using pseudo-labeled edge flows.
+    \item \textbf{Sub-Byte Quantization (INT4 & Ternary Models):} Evaluating whether aggressive sub-byte compression (4-bit or ternary weights) further regularizes shortcut learning or crosses a degradation threshold where critical security features are permanently erased.
+\end{enumerate}

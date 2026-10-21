@@ -1,0 +1,28 @@
+\section{Discussion}
+\label{sec:discussion}
+
+\subsection{Quantization as an Implicit Regularizer}
+The central theoretical insight established by this study is that \emph{uniform integer post-training quantization functions as an implicit regularization operator}. In high-capacity floating-point models, gradient optimization fits extremely subtle, high-frequency decision boundaries that maximize empirical separation on source training telemetry. When evaluated on target captures collected under different network topologies, these subtle boundaries transform into catastrophic failure modes.
+
+By restricting weight tensors $\mathbf{W}$ to discrete steps $\Delta W = S_W$, PTQ acts analogously to weight clipping and stochastic rounding. Non-causal features whose marginal contribution to the log-odds is smaller than the quantization bin width are effectively neutralized. This explains the marked suppression of false alarms on UNSW-NB15 (reducing false positives from $5,612$ to $3,090$, a $44.9\%$ reduction) while simultaneously improving malicious detection count by $+310$ flows.
+
+\subsection{The Reality of Standalone Zero-Shot Edge NIDS}
+While INT8 significantly mitigates collapse ($+1.09\%$ accuracy gain, $\chi^2 = 1,871.69, p < 10^{-15}$), our findings underscore a sobering reality for practical edge cybersecurity: \textbf{Zero-shot cross-domain ML-NIDS remains unviable for standalone production deployment without domain adaptation}.
+
+Even with quantization mitigation, the absolute attack recall across UNSW-NB15 is only $2.54\%$. For four out of nine attack families (Analysis, Backdoors, Reconnaissance, and Shellcode), zero-shot recall is exactly $0.00\%$. A system that misses $97.46\%$ of operational attacks cannot serve as a primary security perimeter. Consequently, we argue that the academic practice of evaluating ML-NIDS exclusively on holdout splits of single datasets (such as reporting $>99\%$ accuracy on CIC-IDS-2017) fosters a dangerously inflated sense of defensive capability.
+
+\subsection{Methodological Strengths & Ethical Safeguards}
+In response to widespread reproducibility and evaluation pitfalls documented by Arp et al.~\cite{arp2022dos}, ZeroEdge-NIDS embodies several rigorous experimental safeguards:
+\begin{enumerate}
+    \item \textbf{No Target Snooping:} Feature transformations, logarithmic scales, and min-max normalization parameters were strictly frozen on the CIC-IDS-2017 training set and never adapted to UNSW-NB15.
+    \item \textbf{Zero Synthetic Data Fabrication:} All reported evaluations utilize real, unaugmented network traffic captures from verified public corpora.
+    \item \textbf{Explicit Architectural Transparency:} We strictly segregate empirical timings measured on host hardware from analytical projections computed for the virtual ESP32 target.
+    \item \textbf{Evaluation Dependency Gating:} The Interactive Experiment Lab prevents misleading metric reporting by requiring validated ground truth labels before calculating diagnostic classification scores.
+\end{enumerate}
+
+\subsection{Threats to Validity & Limitations}
+\begin{itemize}
+    \item \textbf{Simulation Boundaries:} The ESP32 latency, memory, and power figures reported in Section~\ref{sec:results} are mathematical projections derived from counted MAC operations and documented datasheet constants. Physical silicon measurements may introduce cache misses, memory bus contention, and peripheral interrupt jitter.
+    \item \textbf{Coarse Binary Classification:} This study models network intrusion detection as a binary classification task (benign vs. malicious). While binary triage is typical for edge microcontrollers acting as lightweight packet filters, fine-grained multi-class attribution across specific CVEs remains unaddressed.
+    \item \textbf{Batch Size Discrepancies:} Host CPU benchmarks utilize batch sizes of one flow to reflect true stream-based edge arrival, but CPU instruction caches and branch predictors still favor host execution over bare-metal microcontroller pipelines.
+\end{itemize}

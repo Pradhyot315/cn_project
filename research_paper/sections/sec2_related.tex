@@ -1,0 +1,43 @@
+\section{Related Work}
+\label{sec:related}
+
+This investigation bridges three distinct research domains: cross-domain network intrusion detection, shortcut learning in machine learning security, and edge post-training quantization on microcontrollers.
+
+\subsection{Cross-Domain Generalization in ML-NIDS}
+Machine learning applied to network telemetry dates back decades, yet the seminal critique by Sommer and Paxson~\cite{sommer2010outside} highlighted that intrusion detection operates outside a ``closed world.'' Unlike closed computer vision benchmarks, network traffic is characterized by non-stationary statistical distributions, immense background diversity, high cost of false positives, and semantic drift across administrative domains~\cite{ring2019survey}.
+
+Recent benchmark datasets, notably CIC-IDS-2017~\cite{sharafaldin2018cicids} and UNSW-NB15~\cite{moustafa2015unsw}, are widely utilized for evaluating deep classifiers. However, numerous independent studies demonstrate that classifiers achieving $>98\%$ detection accuracy when evaluated on test partitions drawn from the same dataset frequently collapse to chance levels ($30\text{--}50\%$) when evaluated on disjoint datasets collected under different network topologies~\cite{sarhan2023standard, apruzzese2023role}. While prior works document this cross-domain performance penalty, they overwhelmingly propose domain adaptation, fine-tuning, or retraining on target captures. In contrast, ZeroEdge-NIDS evaluates the realistic, worst-case operational scenario of \emph{pure zero-shot edge deployment}, where an embedded MCU is deployed into an unknown network without target retraining.
+
+\subsection{Shortcut Learning and Machine Learning Security}
+Arp et al.~\cite{arp2022dos} conducted an extensive survey identifying fundamental methodology flaws in computer security ML, prominently highlighting \emph{spatial and temporal snooping} and reliance on non-causal features. In general machine learning, Geirhos et al.~\cite{geirhos2020shortcut} synthesized these phenomena under the unifying taxonomy of \emph{shortcut learning}: deep neural networks minimize empirical risk by learning high-frequency or superficial correlations that satisfy training objectives rather than discovering invariant causal mechanisms.
+
+In network security, standard feature extractors frequently retain superficial artifacts—such as IP address subnets, static server destination ports, or synchronized packet sequence numbers—that act as unintentional labels~\cite{doriguzzi2020lucid}. While dropping explicit packet headers is a recognized design guideline, complex non-linear models can still assemble surrogate shortcuts from correlated traffic statistics (such as packet size averages coupled with flow durations). Our work explicitly probes these surrogate shortcuts using permutation feature importance before and after precision quantization.
+
+\subsection{Quantization and TinyML on Microcontrollers}
+Deploying neural inference on microcontrollers (TinyML) is governed by extreme resource boundaries: typically $<512\ \text{KB}$ of embedded SRAM and $<4\ \text{MB}$ of flash storage~\cite{warden2019tinyml, banbury2021benchmarking}. Jacob et al.~\cite{jacob2018quantization} formalized integer-arithmetic-only quantization (PTQ), utilizing affine transformations to map 32-bit floating-point tensors into 8-bit integers ($q \in [-128, 127]$) while executing inner products strictly through 32-bit integer accumulators.
+
+Frameworks such as TensorFlow Lite for Microcontrollers (TFLM)~\cite{david2021tensorflow} demonstrate that INT8 models yield substantial memory and power savings on ARM Cortex-M and Espressif Xtensa LX6 processors. However, prior TinyML evaluations have focused almost exclusively on in-domain accuracy retention (evaluating on holdout splits of the original training corpus). The question of how quantization affects out-of-distribution transfer and shortcut resilience has remained largely unaddressed.
+
+\begin{table*}[t]
+\centering
+\caption{Systematic Comparison of ZeroEdge-NIDS Against Existing Edge and Cross-Domain NIDS Approaches}
+\label{tab:related_comparison}
+\renewcommand{\arraystretch}{1.2}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lcccccc}
+\hline
+\textbf{Approach / Framework} & \textbf{Target Hardware Tier} & \textbf{Precision} & \textbf{Cross-Domain Evaluation} & \textbf{Shortcut Learning Probe} & \textbf{Statistical Rigor Tests} & \textbf{Label Gating Enforced} \\
+\hline
+Standard DNN-NIDS~\cite{sharafaldin2018cicids} & Cloud Server / GPU & FP32 & No (In-domain split only) & None & Student's t-test only & No \\
+LUCID~\cite{doriguzzi2020lucid} & Edge Gateway / Single-Board PC & FP32 & Cross-dataset evaluated & Header artifacts dropped & None & No \\
+Kitsune (Autoencoder) & Gateway / Embedded Linux & FP32 & Evaluated across mirai PCAPs & None & None & No \\
+TinyML TFLM Benchmark~\cite{banbury2021benchmarking} & Microcontroller (MCU) & INT8 & No (Holdout split only) & None & Metric means only & No \\
+Sarhan et al.~\cite{sarhan2023standard} & Workstation CPU & FP32 & Cross-dataset evaluated & Feature set mapping & Wilcoxon tests & No \\
+\hline
+\textbf{ZeroEdge-NIDS (This Work)} & \textbf{MCU (ESP32) \& Host CPU} & \textbf{FP32 vs. INT8} & \textbf{Zero-Shot (CIC $\to$ UNSW)} & \textbf{Permutation Importance} & \textbf{McNemar \& Bootstrap CI} & \textbf{Yes (Strictly Enforced)} \\
+\hline
+\end{tabular}
+}
+\end{table*}
+
+Table~\ref{tab:related_comparison} contrasts ZeroEdge-NIDS against existing edge and cross-domain intrusion detection methodologies across target hardware tiers, precision modes, and experimental integrity guarantees.

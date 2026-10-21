@@ -1,0 +1,8 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+This paper investigated the intersection of Post-Training Integer Quantization (PTQ) and shortcut learning in edge-deployable Network Intrusion Detection Systems through the ZeroEdge-NIDS evaluation platform. By training a multi-layer perceptron on CIC-IDS-2017 using a standardized 16-feature schema with explicit shortcut artifact removal, and evaluating zero-shot across all $257,673$ flows of UNSW-NB15, we empirically documented a catastrophic cross-domain collapse of $-61.92\%$ in the FP32 baseline.
+
+Crucially, our experiments established that uniform 8-bit integer quantization acts as an implicit regularizer rather than an accuracy degrade. The INT8 model achieved an accuracy of $36.51\%$ ($+1.09\%$ over FP32) and suppressed false alarms on target benign traffic by $44.9\%$, yielding a precision surge from $40.80\%$ to $57.48\%$. This mitigation effect was proven statistically significant via a paired McNemar correctness test ($\chi^2 = 1,871.69, p < 10^{-15}$) and a bootstrap $95\%$ confidence interval strictly bounded above zero ($[+0.0138, +0.0152]$). Permutation feature importance probes confirmed that precision truncation dampens non-causal statistical shortcuts learned on training telemetry.
+
+Finally, by releasing our full codebase, empirical CSV datasets, and interactive experiment lab with strict dependency gating, we advocate for principled evaluation standards in TinyML cybersecurity: moving beyond closed in-domain benchmark claims toward transparent, cross-domain evaluations grounded in statistical rigor.
